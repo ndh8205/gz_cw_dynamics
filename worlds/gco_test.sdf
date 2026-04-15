@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<!--
+  GCO formation test world (LVLH frame as world frame)
+
+  Chief  : intel_sat_dummy, static, at origin (LVLH origin)
+  Deputy : nasa_satellite, placed at GCO initial position
+           with CW pseudo-force plugin attached
+
+  Frame convention (Hill frame):
+    +x  radial out           +y  along-track           +z  orbit normal
+
+  Chief orbit: 545 km SSO, a = 6923.137 km, n = 1.0959e-3 rad/s, T = 95.55 min
+
+  GCO formation (radius r_B = 50 m, phase = 0):
+    r_0 = (   0 ,  50   ,   0     ) m
+    v_0 = (0.02740 ,  0 , 0.04746 ) m/s
+-->
+<sdf version="1.9">
+  <world name="gco_test">
+
+    <!-- 10 ms step reduces plugin callback + sensor load (was 1 ms default,
+         which appears to starve the WSL2 GUI thread). CW with n*dt ~ 1e-5 is
+         still deep inside the RK/explicit stability region. -->
+    <!-- Physics step 10 ms, RTF 100 for fast verification runs.
+         (95 min orbit compresses to ~57 s wall-clock.)
+         Students can reduce RTF via GUI slider or set_physics service. -->
+    <physics name="10ms" type="dart">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>100.0</real_time_factor>
+    </physics>
+
+    <gravity>0 0 0</gravity>
+
+    <!-- GUI (same style as orbit_sim worlds, proven on this machine) -->
+    <gui fullscreen="0">
+      <plugin filename="GzScene3D" name="3D View">
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <background_color>0 0 0 1</background_color>
+        <!-- Camera at (+25, -25, +12) looking at origin (chief).
+             yaw = 2.356 (3pi/4), pitch = 0.327 -->
+        <camera_pose>25 -25 12 0 0.327 2.356</camera_pose>
+      </plugin>
+    </gui>
+
+    <!-- Space scene. Strictly-correct orbital ambient is near zero (earthshine
+         + starlight << direct sun), but that makes unlit faces invisible on
+         WSL rendering. Use a small but visible ambient (0.15) so students
+         can see both the sun-lit side (bright) and the shadow side (dim) of
+         satellites. Reduce later for more dramatic look. -->
+    <!-- Debug: high ambient so satellites are definitely visible even if
+         the directional light update isn't propagating. Tighten later. -->
+    <scene>
+      <ambient>0.5 0.5 0.55 1</ambient>
+      <background>0 0 0 1</background>
+      <shadows>true</shadows>
+      <grid>true</grid>
+    </scene>
+
+    <!-- Sun: D65-ish white (5778 K in vacuum, no atmosphere reddening).
+         Specular high, ambient none (directional). Direction is rewritten
+         each tick by ChiefPropagator. -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 0 0 0 0</pose>
+      <diffuse>1.0 0.98 0.95 1</diffuse>
+      <specular>0.8 0.8 0.8 1</specular>
+      <direction>-1 0 0</direction>
+      <visualize>false</visualize>
+    </light>
+
+<!-- Layer A disabled again for visibility bisect.
+    <plugin filename="gz_chief_propagator-system"
+            name="gz_cw_dynamics::ChiefPropagator"> ... </plugin>
+    -->
+
+    <!-- ========== Chief (LVLH origin, fixed) ========== -->
+    <include>
+      <uri>model://intel_sat_dummy</uri>
+      <name>chief</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- ========== Deputy (GCO initial state) ========== -->
+    <include>
+      <uri>model://nasa_satellite</uri>
+      <name>deputy</name>
+      <pose>0 50 0 0 0 0</pose>
+      <plugin filename="gz_cw_dynamics-system"
+              name="gz_cw_dynamics::CWDynamics">
+        <link_name>nasa_satellite_link</link_name>
+        <mean_motion>1.0959e-3</mean_motion>
+        <initial_velocity>0.02740 0.0 0.04746</initial_velocity>
+        <pseudo_accel_topic>/deputy/cw_pseudo_accel</pseudo_accel_topic>
+
+        <!-- Schweighart-Sedwick J2 augmentation available (set to true to
+             enable). Kept off for the seminar so students see clean CW. -->
+        <enable_j2>false</enable_j2>
+        <j2>1.082627e-3</j2>
+        <earth_radius>6378.1363</earth_radius>
+        <sma>6923.137</sma>
+        <inclination_deg>97.5736787997506</inclination_deg>
+      </plugin>
+
+      <!-- Orbit-aware IMU (gyro picks up LVLH rotation, accel subtracts
+           CW pseudo-force so only non-gravitational specific force remains). -->
+      <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">
+        <link_name>nasa_satellite_link</link_name>
+        <mean_motion>1.0959e-3</mean_motion>
+        <topic>/deputy/imu/data</topic>
+        <frame_id>deputy_body</frame_id>
+        <pseudo_accel_topic>/deputy/cw_pseudo_accel</pseudo_accel_topic>
+        <update_rate>100</update_rate>
+        <accel_noise_stddev>1.0e-3</accel_noise_stddev>
+        <gyro_noise_stddev>1.745e-5</gyro_noise_stddev>
+        <accel_bias_rw>1.0e-6</accel_bias_rw>
+        <gyro_bias_rw>1.745e-7</gyro_bias_rw>
+        <accel_bias_init>0 0 0</accel_bias_init>
+        <gyro_bias_init>0 0 0</gyro_bias_init>
+        <seed>0</seed>
+      </plugin>
+
+      <!-- Star tracker (attitude in ECI, with Gaussian small-angle noise). -->
+      <plugin filename="gz_star_tracker-system"
+              name="gz_cw_dynamics::StarTracker">
+        <link_name>nasa_satellite_link</link_name>
+        <!-- Sensors use truth chief state (they measure the actual sky). -->
+        <chief_state_topic>/chief/eci_truth</chief_state_topic>
+        <output_topic>/deputy/star_tracker/attitude</output_topic>
+        <frame_id>deputy_body</frame_id>
+        <angle_noise_deg>0.05</angle_noise_deg>
+        <update_rate>10</update_rate>
+        <seed>0</seed>
+      </plugin>
+
+      <!-- GPS receiver (ECI position + velocity with Gaussian noise). -->
+      <plugin filename="gz_gps-system" name="gz_cw_dynamics::Gps">
+        <link_name>nasa_satellite_link</link_name>
+        <chief_state_topic>/chief/eci_truth</chief_state_topic>
+        <output_topic>/deputy/gps/odometry</output_topic>
+        <sigma_pos_m>5.0</sigma_pos_m>
+        <sigma_vel_mps>0.05</sigma_vel_mps>
+        <update_rate>1</update_rate>
+        <seed>0</seed>
+      </plugin>
+    </include>
+
+  </world>
+</sdf>

@@ -1,0 +1,155 @@
+<?xml version="1.0" ?>
+<!--
+  Thruster unit test world.
+
+  Deputy alone in zero-g (no CW, no chief). Six thrusters on the box body,
+  one per +/- body axis. Fire each one in turn via ROS 2 Float32 topics:
+
+    ros2 topic pub -1 /deputy/thruster/fx_plus/cmd std_msgs/Float32 "{data: 1.0}"
+    ros2 topic pub -1 /deputy/thruster/fy_plus/cmd std_msgs/Float32 "{data: 1.0}"
+    ...
+
+  Expected: firing +X pushes deputy in +X world direction (deputy starts with
+  identity attitude so body frame == world frame), etc. Acceleration
+  F/m = 1 / 2.6 = 0.385 m/s^2, so 1 s at full throttle -> 0.385 m/s, 0.192 m.
+-->
+<sdf version="1.9">
+  <world name="thruster_test">
+
+    <physics name="10ms" type="dart">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <gravity>0 0 0</gravity>
+
+    <gui fullscreen="0">
+      <plugin filename="GzScene3D" name="3D View">
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <background_color>0 0 0 1</background_color>
+        <camera_pose>6 -6 4 0 0.5 2.356</camera_pose>
+      </plugin>
+    </gui>
+
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0 0 0 1</background>
+      <grid>true</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <direction>-0.3 -0.3 -0.9</direction>
+    </light>
+
+    <!-- ========== Deputy: 1 m box, 6 thrusters ========== -->
+    <model name="deputy">
+      <pose>0 0 0 0 0 0</pose>
+      <link name="deputy_link">
+        <inertial>
+          <mass>2.6</mass>
+          <inertia>
+            <ixx>0.43</ixx><iyy>0.43</iyy><izz>0.43</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <visual name="body_visual">
+          <geometry><box><size>1 1 1</size></box></geometry>
+          <material>
+            <ambient>0.3 0.5 0.8 1</ambient>
+            <diffuse>0.3 0.5 0.8 1</diffuse>
+          </material>
+        </visual>
+        <collision name="body_col">
+          <geometry><box><size>1 1 1</size></box></geometry>
+        </collision>
+        <!-- Six small axis markers for visual orientation. -->
+        <visual name="axis_x">
+          <pose>0.6 0 0 0 1.5708 0</pose>
+          <geometry><cylinder><radius>0.05</radius><length>0.2</length></cylinder></geometry>
+          <material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse></material>
+        </visual>
+        <visual name="axis_y">
+          <pose>0 0.6 0 -1.5708 0 0</pose>
+          <geometry><cylinder><radius>0.05</radius><length>0.2</length></cylinder></geometry>
+          <material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse></material>
+        </visual>
+        <visual name="axis_z">
+          <pose>0 0 0.6 0 0 0</pose>
+          <geometry><cylinder><radius>0.05</radius><length>0.2</length></cylinder></geometry>
+          <material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- ---- Six thrusters: one per body axis direction ---- -->
+      <!-- +X: force along +body_x, nozzle on -X face -->
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fx_plus/cmd</topic>
+        <position>-0.5 0 0</position>
+        <direction>1 0 0</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fx_minus/cmd</topic>
+        <position>0.5 0 0</position>
+        <direction>-1 0 0</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fy_plus/cmd</topic>
+        <position>0 -0.5 0</position>
+        <direction>0 1 0</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fy_minus/cmd</topic>
+        <position>0 0.5 0</position>
+        <direction>0 -1 0</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fz_plus/cmd</topic>
+        <position>0 0 -0.5</position>
+        <direction>0 0 1</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+      <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
+        <link_name>deputy_link</link_name>
+        <topic>/deputy/thruster/fz_minus/cmd</topic>
+        <position>0 0 0.5</position>
+        <direction>0 0 -1</direction>
+        <max_force>1.0</max_force>
+      </plugin>
+
+      <!-- Orbit-aware IMU. mean_motion set to 545 km SSO value to verify
+           that LVLH rotation contribution (0, 0, n) appears in the gyro
+           even when the deputy is stationary in this flat-space test.  -->
+      <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">
+        <link_name>deputy_link</link_name>
+        <mean_motion>1.0959e-3</mean_motion>
+        <topic>/deputy/imu/data</topic>
+        <frame_id>deputy_body</frame_id>
+        <pseudo_accel_topic>/deputy/cw_pseudo_accel</pseudo_accel_topic>
+        <update_rate>100</update_rate>
+
+        <!-- Noise + random-walk bias (matches MATLAB Space_SLAM IMU model,
+             SI-converted from km-based params). -->
+        <accel_noise_stddev>1.0e-3</accel_noise_stddev>     <!-- m/s^2 √s -->
+        <gyro_noise_stddev>1.745e-5</gyro_noise_stddev>     <!-- rad/s √s -->
+        <accel_bias_rw>1.0e-6</accel_bias_rw>               <!-- m/s^2 /√s -->
+        <gyro_bias_rw>1.745e-7</gyro_bias_rw>               <!-- rad/s /√s -->
+        <accel_bias_init>0 0 0</accel_bias_init>
+        <gyro_bias_init>0 0 0</gyro_bias_init>
+        <seed>0</seed>                                      <!-- 0 = random -->
+      </plugin>
+    </model>
+
+  </world>
+</sdf>

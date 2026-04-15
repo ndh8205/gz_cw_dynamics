@@ -1,0 +1,87 @@
+<?xml version="1.0" ?>
+<!--
+  Headless GCO verification world.
+
+  No camera/IMU sensors, no mesh includes - just a minimal deputy link with
+  the CW plugin attached. Avoids the WSL2 headless rendering crash seen
+  when camera sensors try to initialize in server-only mode.
+
+  Chief is an invisible static anchor at the origin for reference purposes.
+
+  Initial condition: 50 m GCO (same as gco_test.sdf).
+-->
+<sdf version="1.9">
+  <world name="gco_test">
+
+    <physics name="10ms" type="dart">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>100.0</real_time_factor>
+    </physics>
+    <gravity>0 0 0</gravity>
+
+    <scene>
+      <ambient>0.1 0.1 0.1 1</ambient>
+      <background>0 0 0 1</background>
+    </scene>
+
+    <!-- Layer A: chief orbit propagator. -->
+    <plugin filename="gz_chief_propagator-system"
+            name="gz_cw_dynamics::ChiefPropagator">
+      <sma>6923.137</sma>
+      <ecc>0.0</ecc>
+      <inc_deg>97.5736787997506</inc_deg>
+      <raan_deg>226.932075641711</raan_deg>
+      <aop_deg>171.130489033293</aop_deg>
+      <ta_deg>0.0</ta_deg>
+      <mu>3.986004418e14</mu>
+      <sun_eci>0.891 0.416 0.181</sun_eci>
+      <chief_state_topic>/chief/eci_state</chief_state_topic>
+      <sun_lvlh_topic>/chief/sun_vector_lvlh</sun_lvlh_topic>
+      <update_rate>10</update_rate>
+    </plugin>
+
+    <!-- Chief: invisible static anchor at LVLH origin. -->
+    <model name="chief">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="chief_link">
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>1e-3</ixx><iyy>1e-3</iyy><izz>1e-3</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+      </link>
+    </model>
+
+    <!-- Deputy: minimal link, CW plugin attached. -->
+    <model name="deputy">
+      <pose>0 50 0 0 0 0</pose>
+      <link name="deputy_link">
+        <inertial>
+          <mass>2.6</mass>
+          <inertia>
+            <ixx>1e-2</ixx><iyy>1e-2</iyy><izz>4e-3</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+      </link>
+
+      <plugin filename="gz_cw_dynamics-system"
+              name="gz_cw_dynamics::CWDynamics">
+        <link_name>deputy_link</link_name>
+        <mean_motion>1.0959e-3</mean_motion>
+        <initial_velocity>0.02740 0.0 0.04746</initial_velocity>
+        <pseudo_accel_topic>/deputy/cw_pseudo_accel</pseudo_accel_topic>
+
+        <enable_j2>false</enable_j2>
+        <j2>1.082627e-3</j2>
+        <earth_radius>6378.1363</earth_radius>
+        <sma>6923.137</sma>
+        <inclination_deg>97.5736787997506</inclination_deg>
+      </plugin>
+    </model>
+
+  </world>
+</sdf>
