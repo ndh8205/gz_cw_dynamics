@@ -88,7 +88,7 @@ public:
     for (auto &c : nodeName) if (c == '/') c = '_';
     this->rosNode = std::make_shared<rclcpp::Node>(nodeName);
     this->rosSub = this->rosNode->create_subscription<std_msgs::msg::Float32>(
-        this->topic, rclcpp::SensorDataQoS(),
+        this->topic, 10,
         [this](const std_msgs::msg::Float32::SharedPtr msg) {
           double t = static_cast<double>(msg->data);
           if (t >  this->maxTorque) t =  this->maxTorque;
