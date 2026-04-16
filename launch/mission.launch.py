@@ -56,6 +56,8 @@ def generate_launch_description():
         ),
 
         # Camera bridges (deputy mesh models → ROS 2 Image, for web_video_server).
+        # rosbridge_server: WebSocket :9090 for student laptops (roslibpy).
+        # web_video_server: HTTP :8080 for camera mjpeg streams in browser.
         TimerAction(
             period=2.0,
             actions=[
@@ -73,6 +75,12 @@ def generate_launch_description():
                     package='web_video_server',
                     executable='web_video_server',
                     name='web_video_server',
+                    output='screen',
+                ),
+                LaunchNode(
+                    package='rosbridge_server',
+                    executable='rosbridge_websocket',
+                    name='rosbridge_websocket',
                     output='screen',
                 ),
             ],
