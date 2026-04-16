@@ -1,27 +1,4 @@
 <?xml version="1.0" ?>
-<!--
-  SSA seminar mission world.
-
-  Layout (LVLH / Hill frame, chief at origin):
-      +x radial out   +y along-track   +z orbit normal
-
-      deputy_formation (team 1, 4p)    at (  0, +5000, 0) m
-      chief (static)                   at (  0,     0, 0)
-      deputy_docking   (team 2, 3p)    at (  0, -5000, 0) m
-
-  Both deputies: base_link (with satellite mesh + IMU + camera sensors)
-  plus three orthogonal reaction wheels (wheel_x/y/z) connected by
-  revolute joints. ROS 2 topic interfaces:
-
-    /deputy_*/thruster/{fx,fy,fz}_{plus,minus}/cmd   std_msgs/Float32 [0,1]
-    /deputy_*/rw/{x,y,z}/cmd                         std_msgs/Float32 [N·m]
-    /deputy_*/imu/data                               sensor_msgs/Imu
-    /deputy_*/star_tracker/attitude                  geometry_msgs/QuaternionStamped
-    /deputy_*/gps/odometry                           nav_msgs/Odometry
-    /nasa_satellite(2)/camera                        gz Image (mesh-sensor)
-
-  Chief ECI state + sun vector come from the external chief_propagator_node.
--->
 <sdf version="1.9">
   <world name="mission">
 
@@ -32,7 +9,6 @@
 
     <gravity>0 0 0</gravity>
 
-    <!-- Sensors system: required for camera + IMU rendering in inline models -->
     <plugin filename="gz-sim-sensors-system"
             name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
@@ -62,10 +38,9 @@
       <diffuse>1.0 0.98 0.95 1</diffuse>
       <specular>0.6 0.6 0.6 1</specular>
       <direction>-1 0 -0.3</direction>
-      <visualize>false</visualize>
     </light>
 
-    <!-- =========================== Chief (static) ========================== -->
+    <!-- Chief -->
     <include>
       <uri>model://intel_sat_dummy</uri>
       <name>chief</name>
@@ -73,156 +48,72 @@
       <static>true</static>
     </include>
 
-    <!-- ====================== Deputy: Formation team 1 ==================== -->
-    <model name="deputy_formation">
+    <!-- Deputy Formation (team 1) -->
+    <include>
+      <uri>model://nasa_satellite</uri>
+      <name>deputy_formation</name>
       <pose>0 5000 0 0 0 0</pose>
 
-      <link name="base_link">
-        <inertial>
-          <mass>2.6</mass>
-          <inertia>
-            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.004</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <visual name="body_visual">
-          <geometry><mesh>
-            <uri>model://nasa_satellite/meshes/nasa_satellite.dae</uri>
-          </mesh></geometry>
-        </visual>
-        <collision name="body_col">
-          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
-        </collision>
-        <sensor name="camera_sensor" type="camera">
-          <pose>-0.01677 0.5224 0.1269 0 0 1.5708</pose>
-          <camera>
-            <horizontal_fov>1.047</horizontal_fov>
-            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
-            <clip><near>0.1</near><far>10000</far></clip>
-          </camera>
-          <always_on>true</always_on>
-          <update_rate>15</update_rate>
-          <topic>nasa_satellite/camera</topic>
-        </sensor>
-      </link>
-
-      <!-- Three orthogonal reaction wheels: x, y, z body axes -->
-      <link name="wheel_x">
-        <pose>0.25 0 0 0 1.5708 0</pose>
-        <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
-        </inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.8 0.1 0.1 1</ambient><diffuse>0.8 0.1 0.1 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_x_joint" type="revolute">
-        <parent>base_link</parent>
-        <child>wheel_x</child>
-        <axis><xyz expressed_in="__model__">1 0 0</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit>
-        </axis>
-      </joint>
-
-      <link name="wheel_y">
-        <pose>0 0.25 0 1.5708 0 0</pose>
-        <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
-        </inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.1 0.8 0.1 1</ambient><diffuse>0.1 0.8 0.1 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_y_joint" type="revolute">
-        <parent>base_link</parent>
-        <child>wheel_y</child>
-        <axis><xyz expressed_in="__model__">0 1 0</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit>
-        </axis>
-      </joint>
-
-      <link name="wheel_z">
-        <pose>0 0 0.25 0 0 0</pose>
-        <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
-        </inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.1 0.1 0.8 1</ambient><diffuse>0.1 0.1 0.8 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_z_joint" type="revolute">
-        <parent>base_link</parent>
-        <child>wheel_z</child>
-        <axis><xyz expressed_in="__model__">0 0 1</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit>
-        </axis>
-      </joint>
-
-      <!-- CW dynamics (applies to base_link) -->
       <plugin filename="gz_cw_dynamics-system" name="gz_cw_dynamics::CWDynamics">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <mean_motion>1.0959e-3</mean_motion>
         <pseudo_accel_topic>/deputy_formation/cw_pseudo_accel</pseudo_accel_topic>
         <enable_j2>false</enable_j2>
       </plugin>
 
-      <!-- 6 thrusters -->
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fx_plus/cmd</topic>
         <position>-0.5 0 0</position><direction>1 0 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fx_minus/cmd</topic>
         <position>0.5 0 0</position><direction>-1 0 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fy_plus/cmd</topic>
         <position>0 -0.5 0</position><direction>0 1 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fy_minus/cmd</topic>
         <position>0 0.5 0</position><direction>0 -1 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fz_plus/cmd</topic>
         <position>0 0 -0.5</position><direction>0 0 1</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <topic>/deputy_formation/thruster/fz_minus/cmd</topic>
         <position>0 0 0.5</position><direction>0 0 -1</direction><max_force>1.0</max_force>
       </plugin>
 
-      <!-- 3 reaction wheels (torque command, max 10 mN·m) -->
+      <!-- 3 virtual reaction wheels (body torque, no physical joints) -->
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_x_joint</joint_name>
+        <link_name>nasa_satellite_link</link_name>
+        <axis>1 0 0</axis>
         <topic>/deputy_formation/rw/x/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_y_joint</joint_name>
+        <link_name>nasa_satellite_link</link_name>
+        <axis>0 1 0</axis>
         <topic>/deputy_formation/rw/y/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_z_joint</joint_name>
+        <link_name>nasa_satellite_link</link_name>
+        <axis>0 0 1</axis>
         <topic>/deputy_formation/rw/z/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
 
       <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <mean_motion>1.0959e-3</mean_motion>
         <topic>/deputy_formation/imu/data</topic>
         <frame_id>deputy_formation_body</frame_id>
@@ -235,158 +126,88 @@
       </plugin>
 
       <plugin filename="gz_star_tracker-system" name="gz_cw_dynamics::StarTracker">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <chief_state_topic>/chief/eci_truth</chief_state_topic>
         <output_topic>/deputy_formation/star_tracker/attitude</output_topic>
-        <frame_id>deputy_formation_body</frame_id>
         <angle_noise_deg>0.05</angle_noise_deg>
         <update_rate>10</update_rate>
       </plugin>
 
       <plugin filename="gz_gps-system" name="gz_cw_dynamics::Gps">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link</link_name>
         <chief_state_topic>/chief/eci_truth</chief_state_topic>
         <output_topic>/deputy_formation/gps/odometry</output_topic>
         <sigma_pos_m>5.0</sigma_pos_m>
         <sigma_vel_mps>0.05</sigma_vel_mps>
         <update_rate>1</update_rate>
       </plugin>
-    </model>
+    </include>
 
-    <!-- ======================= Deputy: Docking team 2 ===================== -->
-    <model name="deputy_docking">
+    <!-- Deputy Docking (team 2) -->
+    <include>
+      <uri>model://nasa_satellite2</uri>
+      <name>deputy_docking</name>
       <pose>0 -5000 0 0 0 0</pose>
 
-      <link name="base_link">
-        <inertial>
-          <mass>2.0</mass>
-          <inertia>
-            <ixx>0.008</ixx><iyy>0.008</iyy><izz>0.003</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-          </inertia>
-        </inertial>
-        <visual name="body_visual">
-          <geometry><mesh>
-            <uri>model://nasa_satellite2/meshes/nasa_satellite2.dae</uri>
-          </mesh></geometry>
-        </visual>
-        <collision name="body_col">
-          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
-        </collision>
-        <sensor name="camera_sensor" type="camera">
-          <pose>0 0.4 0 0 0 1.5708</pose>
-          <camera>
-            <horizontal_fov>1.047</horizontal_fov>
-            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
-            <clip><near>0.1</near><far>10000</far></clip>
-          </camera>
-          <always_on>true</always_on>
-          <update_rate>15</update_rate>
-          <topic>nasa_satellite2/camera</topic>
-        </sensor>
-      </link>
-
-      <link name="wheel_x">
-        <pose>0.25 0 0 0 1.5708 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.8 0.1 0.1 1</ambient><diffuse>0.8 0.1 0.1 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_x_joint" type="revolute">
-        <parent>base_link</parent><child>wheel_x</child>
-        <axis><xyz expressed_in="__model__">1 0 0</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit></axis>
-      </joint>
-
-      <link name="wheel_y">
-        <pose>0 0.25 0 1.5708 0 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.1 0.8 0.1 1</ambient><diffuse>0.1 0.8 0.1 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_y_joint" type="revolute">
-        <parent>base_link</parent><child>wheel_y</child>
-        <axis><xyz expressed_in="__model__">0 1 0</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit></axis>
-      </joint>
-
-      <link name="wheel_z">
-        <pose>0 0 0.25 0 0 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
-            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
-        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
-          <material><ambient>0.1 0.1 0.8 1</ambient><diffuse>0.1 0.1 0.8 1</diffuse></material></visual>
-      </link>
-      <joint name="wheel_z_joint" type="revolute">
-        <parent>base_link</parent><child>wheel_z</child>
-        <axis><xyz expressed_in="__model__">0 0 1</xyz>
-          <dynamics><friction>0</friction><damping>0</damping></dynamics>
-          <limit><lower>-1e16</lower><upper>1e16</upper><velocity>1000</velocity></limit></axis>
-      </joint>
-
       <plugin filename="gz_cw_dynamics-system" name="gz_cw_dynamics::CWDynamics">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <mean_motion>1.0959e-3</mean_motion>
         <pseudo_accel_topic>/deputy_docking/cw_pseudo_accel</pseudo_accel_topic>
         <enable_j2>false</enable_j2>
       </plugin>
 
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fx_plus/cmd</topic>
         <position>-0.5 0 0</position><direction>1 0 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fx_minus/cmd</topic>
         <position>0.5 0 0</position><direction>-1 0 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fy_plus/cmd</topic>
         <position>0 -0.5 0</position><direction>0 1 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fy_minus/cmd</topic>
         <position>0 0.5 0</position><direction>0 -1 0</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fz_plus/cmd</topic>
         <position>0 0 -0.5</position><direction>0 0 1</direction><max_force>1.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <topic>/deputy_docking/thruster/fz_minus/cmd</topic>
         <position>0 0 0.5</position><direction>0 0 -1</direction><max_force>1.0</max_force>
       </plugin>
 
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_x_joint</joint_name>
+        <link_name>nasa_satellite_link2</link_name>
+        <axis>1 0 0</axis>
         <topic>/deputy_docking/rw/x/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_y_joint</joint_name>
+        <link_name>nasa_satellite_link2</link_name>
+        <axis>0 1 0</axis>
         <topic>/deputy_docking/rw/y/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
-        <joint_name>wheel_z_joint</joint_name>
+        <link_name>nasa_satellite_link2</link_name>
+        <axis>0 0 1</axis>
         <topic>/deputy_docking/rw/z/cmd</topic>
         <max_torque>0.01</max_torque>
       </plugin>
 
       <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <mean_motion>1.0959e-3</mean_motion>
         <topic>/deputy_docking/imu/data</topic>
         <frame_id>deputy_docking_body</frame_id>
@@ -399,23 +220,22 @@
       </plugin>
 
       <plugin filename="gz_star_tracker-system" name="gz_cw_dynamics::StarTracker">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <chief_state_topic>/chief/eci_truth</chief_state_topic>
         <output_topic>/deputy_docking/star_tracker/attitude</output_topic>
-        <frame_id>deputy_docking_body</frame_id>
         <angle_noise_deg>0.05</angle_noise_deg>
         <update_rate>10</update_rate>
       </plugin>
 
       <plugin filename="gz_gps-system" name="gz_cw_dynamics::Gps">
-        <link_name>base_link</link_name>
+        <link_name>nasa_satellite_link2</link_name>
         <chief_state_topic>/chief/eci_truth</chief_state_topic>
         <output_topic>/deputy_docking/gps/odometry</output_topic>
         <sigma_pos_m>5.0</sigma_pos_m>
         <sigma_vel_mps>0.05</sigma_vel_mps>
         <update_rate>1</update_rate>
       </plugin>
-    </model>
+    </include>
 
   </world>
 </sdf>

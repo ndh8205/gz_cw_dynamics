@@ -1,24 +1,25 @@
-// Reaction wheel plugin for gz-sim.
+// Reaction wheel plugin (virtual torque mode) for gz-sim.
 //
-// Listens on a ROS 2 std_msgs/Float32 topic for commanded wheel torque
-// [N·m] and applies it to the specified revolute joint via
-// components::JointForceCmd. By Newton's third law, DART produces the
-// opposite torque on the parent body - that is what actually controls
-// spacecraft attitude.
+// Applies commanded torque directly to the body link (no physical wheel
+// link/joint required). This allows attaching via <include> without
+// modifying the satellite model.  Functionally equivalent to a physical
+// RW for attitude control — students see the same topic interface and
+// the body rotates in response.
 //
 // SDF:
 //   <plugin filename="gz_reaction_wheel_ros2-system"
 //           name="gz_cw_dynamics::ReactionWheel">
-//     <joint_name>wheel_x_joint</joint_name>
-//     <topic>/deputy/rw/x/cmd</topic>
-//     <max_torque>0.01</max_torque>   <!-- N·m, clamped -->
+//     <link_name>base_link</link_name>
+//     <axis>0 0 1</axis>           <!-- body-frame torque axis -->
+//     <topic>/deputy/rw/z/cmd</topic>
+//     <max_torque>0.01</max_torque>
 //   </plugin>
 
 #include <gz/plugin/Register.hh>
 #include <gz/sim/System.hh>
 #include <gz/sim/Model.hh>
-#include <gz/sim/components/JointForceCmd.hh>
-#include <gz/sim/components/Joint.hh>
+#include <gz/sim/Link.hh>
+#include <gz/math/Vector3.hh>
 #include <gz/common/Console.hh>
 
 #include <rclcpp/rclcpp.hpp>
@@ -57,20 +58,26 @@ public:
       return;
     }
 
-    const std::string jointName =
-        sdf->Get<std::string>("joint_name", std::string("wheel_joint")).first;
+    const std::string linkName =
+        sdf->Get<std::string>("link_name", std::string("base_link")).first;
     this->topic =
         sdf->Get<std::string>("topic", std::string("/rw/cmd")).first;
     this->maxTorque =
         sdf->Get<double>("max_torque", 0.01).first;
+    this->axis =
+        sdf->Get<gz::math::Vector3d>("axis",
+                                     gz::math::Vector3d(0, 0, 1)).first;
+    if (this->axis.Length() > 1e-9)
+      this->axis.Normalize();
 
-    this->jointEntity = this->model.JointByName(ecm, jointName);
-    if (this->jointEntity == gz::sim::kNullEntity)
+    const auto linkEntity = this->model.LinkByName(ecm, linkName);
+    if (linkEntity == gz::sim::kNullEntity)
     {
-      gzerr << "[ReactionWheel] joint [" << jointName << "] not found."
+      gzerr << "[ReactionWheel] link [" << linkName << "] not found."
             << std::endl;
       return;
     }
+    this->link = gz::sim::Link(linkEntity);
 
     if (!rclcpp::ok())
     {
@@ -86,7 +93,7 @@ public:
           double t = static_cast<double>(msg->data);
           if (t >  this->maxTorque) t =  this->maxTorque;
           if (t < -this->maxTorque) t = -this->maxTorque;
-          this->torque.store(t);
+          this->torqueCmd.store(t);
         });
     this->rosExecutor =
         std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
@@ -94,7 +101,8 @@ public:
     this->rosThread = std::thread([this](){ this->rosExecutor->spin(); });
 
     this->configured = true;
-    gzmsg << "[ReactionWheel] configured: joint=" << jointName
+    gzmsg << "[ReactionWheel] configured: link=" << linkName
+          << ", axis=" << this->axis
           << ", topic=" << this->topic
           << ", max_torque=" << this->maxTorque << " Nm" << std::endl;
   }
@@ -103,29 +111,33 @@ public:
                  gz::sim::EntityComponentManager &ecm) override
   {
     if (!this->configured || info.paused) return;
-    const double t = this->torque.load();
 
-    auto *cmdComp =
-        ecm.Component<gz::sim::components::JointForceCmd>(this->jointEntity);
-    if (cmdComp)
-    {
-      cmdComp->Data() = std::vector<double>{t};
-    }
-    else
-    {
-      ecm.CreateComponent(this->jointEntity,
-          gz::sim::components::JointForceCmd({t}));
-    }
+    const double cmd = this->torqueCmd.load();
+    if (std::abs(cmd) < 1e-12) return;
+
+    // Torque in body frame along the configured axis.
+    // AddWorldWrench expects world-frame torque, so rotate from body.
+    const auto poseOpt = this->link.WorldPose(ecm);
+    if (!poseOpt.has_value()) return;
+
+    const gz::math::Vector3d torqueBody = cmd * this->axis;
+    const gz::math::Vector3d torqueWorld =
+        poseOpt->Rot().RotateVector(torqueBody);
+
+    this->link.AddWorldWrench(ecm,
+        gz::math::Vector3d::Zero,   // no force
+        torqueWorld);                // torque only
   }
 
 private:
-  gz::sim::Model  model;
-  gz::sim::Entity jointEntity{gz::sim::kNullEntity};
+  gz::sim::Model model;
+  gz::sim::Link  link;
   std::string topic;
+  gz::math::Vector3d axis{0, 0, 1};
   double maxTorque{0.01};
   bool configured{false};
 
-  std::atomic<double> torque{0.0};
+  std::atomic<double> torqueCmd{0.0};
 
   rclcpp::Node::SharedPtr rosNode;
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr rosSub;
