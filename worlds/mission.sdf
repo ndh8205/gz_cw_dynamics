@@ -32,6 +32,14 @@
 
     <gravity>0 0 0</gravity>
 
+    <!-- Sensors system: required for camera + IMU rendering in inline models -->
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system"
+            name="gz::sim::systems::Imu"/>
+
     <gui fullscreen="0">
       <plugin filename="GzScene3D" name="3D View">
         <engine>ogre2</engine>
