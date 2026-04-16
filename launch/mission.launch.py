@@ -50,7 +50,8 @@ def generate_launch_description():
             condition=UnlessCondition(headless),
         ),
         ExecuteProcess(
-            cmd=['gz', 'sim', '-s', '-r', '--verbose', verbose, world_file],
+            cmd=['gz', 'sim', '-s', '-r', '--headless-rendering',
+                 '--verbose', verbose, world_file],
             output='screen',
             condition=IfCondition(headless),
         ),
