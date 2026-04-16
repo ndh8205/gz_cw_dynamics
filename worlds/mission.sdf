@@ -96,7 +96,7 @@
     <!-- Cam 2: Deputy Formation close-up -->
     <model name="obs_formation">
       <static>true</static>
-      <pose>5003 -3 2 0 0.3 2.3</pose>
+      <pose>3 5003 2 0 0.44 -2.356</pose>
       <link name="link">
         <sensor name="cam" type="camera">
           <camera>
@@ -114,7 +114,7 @@
     <!-- Cam 3: Deputy Docking close-up -->
     <model name="obs_docking">
       <static>true</static>
-      <pose>-5003 -3 2 0 0.3 2.3</pose>
+      <pose>3 -5003 2 0 0.44 2.356</pose>
       <link name="link">
         <sensor name="cam" type="camera">
           <camera>
