@@ -69,6 +69,9 @@ def generate_launch_description():
                     arguments=[
                         '/nasa_satellite/camera@sensor_msgs/msg/Image@gz.msgs.Image',
                         '/nasa_satellite2/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/observer/chief/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/observer/formation/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/observer/docking/camera@sensor_msgs/msg/Image@gz.msgs.Image',
                     ],
                     output='screen',
                 ),
