@@ -14,7 +14,7 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node as RosNode
+from launch_ros.actions import Node as LaunchNode
 
 
 def generate_launch_description():
@@ -55,12 +55,35 @@ def generate_launch_description():
             condition=IfCondition(headless),
         ),
 
+        # Camera bridges (deputy mesh models → ROS 2 Image, for web_video_server).
+        TimerAction(
+            period=2.0,
+            actions=[
+                LaunchNode(
+                    package='ros_gz_bridge',
+                    executable='parameter_bridge',
+                    name='camera_bridge',
+                    arguments=[
+                        '/nasa_satellite/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/nasa_satellite2/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                    ],
+                    output='screen',
+                ),
+                LaunchNode(
+                    package='web_video_server',
+                    executable='web_video_server',
+                    name='web_video_server',
+                    output='screen',
+                ),
+            ],
+        ),
+
         # Chief propagator (TLE + truth + sun vector). Starts 3 s after gz
         # sim to ensure /clock and transport are up.
         TimerAction(
             period=3.0,
             actions=[
-                RosNode(
+                LaunchNode(
                     package='gz_cw_dynamics',
                     executable='chief_propagator_node.py',
                     name='chief_propagator',
