@@ -174,6 +174,19 @@
           <update_rate>15</update_rate>
           <topic>nasa_satellite/camera</topic>
         </sensor>
+        <!-- Chase camera: body-fixed, 4 m behind + 1.5 m above, pitch ~20 deg
+             toward origin. Rigid to base_link so it follows deputy. -->
+        <sensor name="chase_camera" type="camera">
+          <pose>-4 0 1.5 0 0.35 0</pose>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>10000</far></clip>
+          </camera>
+          <always_on>true</always_on>
+          <update_rate>15</update_rate>
+          <topic>chase/formation/camera</topic>
+        </sensor>
       </link>
 
       <!-- Three orthogonal reaction wheels: x, y, z body axes -->
@@ -359,6 +372,18 @@
           <always_on>true</always_on>
           <update_rate>15</update_rate>
           <topic>nasa_satellite2/camera</topic>
+        </sensor>
+        <!-- Chase camera -->
+        <sensor name="chase_camera" type="camera">
+          <pose>-4 0 1.5 0 0.35 0</pose>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>10000</far></clip>
+          </camera>
+          <always_on>true</always_on>
+          <update_rate>15</update_rate>
+          <topic>chase/docking/camera</topic>
         </sensor>
       </link>
 

@@ -72,6 +72,8 @@ def generate_launch_description():
                         '/observer/chief/camera@sensor_msgs/msg/Image@gz.msgs.Image',
                         '/observer/formation/camera@sensor_msgs/msg/Image@gz.msgs.Image',
                         '/observer/docking/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/chase/formation/camera@sensor_msgs/msg/Image@gz.msgs.Image',
+                        '/chase/docking/camera@sensor_msgs/msg/Image@gz.msgs.Image',
                     ],
                     output='screen',
                 ),
