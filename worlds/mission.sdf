@@ -149,22 +149,22 @@
 
       <link name="base_link">
         <inertial>
-          <mass>2.6</mass>
+          <mass>100.0</mass>
           <inertia>
-            <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.004</izz>
+            <ixx>14.0</ixx><iyy>14.0</iyy><izz>10.0</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
           </inertia>
         </inertial>
         <visual name="body_visual">
           <geometry><mesh>
-            <uri>model://nasa_satellite/meshes/nasa_satellite.dae</uri>
+            <uri>model://nasa_satellite2/meshes/nasa_satellite2.dae</uri>
           </mesh></geometry>
         </visual>
         <collision name="body_col">
           <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
         </collision>
         <sensor name="camera_sensor" type="camera">
-          <pose>-0.01677 0.5224 0.1269 0 0 1.5708</pose>
+          <pose>0 0.4 0 0 0 1.5708</pose>
           <camera>
             <horizontal_fov>1.047</horizontal_fov>
             <image><width>640</width><height>480</height><format>R8G8B8</format></image>
@@ -178,10 +178,10 @@
 
       <!-- Three orthogonal reaction wheels: x, y, z body axes -->
       <link name="wheel_x">
-        <pose>0.25 0 0 0 1.5708 0</pose>
+        <pose>0 0 0 0 1.5708 0</pose>
         <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+          <mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
         </inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
@@ -197,10 +197,10 @@
       </joint>
 
       <link name="wheel_y">
-        <pose>0 0.25 0 1.5708 0 0</pose>
+        <pose>0 0 0 1.5708 0 0</pose>
         <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+          <mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
         </inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
@@ -216,10 +216,10 @@
       </joint>
 
       <link name="wheel_z">
-        <pose>0 0 0.25 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <inertial>
-          <mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+          <mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
         </inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
@@ -246,49 +246,55 @@
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fx_plus/cmd</topic>
-        <position>-0.5 0 0</position><direction>1 0 0</direction><max_force>1.0</max_force>
+        <position>-0.4 0 0</position><direction>1 0 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fx_minus/cmd</topic>
-        <position>0.5 0 0</position><direction>-1 0 0</direction><max_force>1.0</max_force>
+        <position>0.4 0 0</position><direction>-1 0 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fy_plus/cmd</topic>
-        <position>0 -0.5 0</position><direction>0 1 0</direction><max_force>1.0</max_force>
+        <position>0 -0.4 0</position><direction>0 1 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fy_minus/cmd</topic>
-        <position>0 0.5 0</position><direction>0 -1 0</direction><max_force>1.0</max_force>
+        <position>0 0.4 0</position><direction>0 -1 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fz_plus/cmd</topic>
-        <position>0 0 -0.5</position><direction>0 0 1</direction><max_force>1.0</max_force>
+        <position>0 0 -0.4</position><direction>0 0 1</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_formation/thruster/fz_minus/cmd</topic>
-        <position>0 0 0.5</position><direction>0 0 -1</direction><max_force>1.0</max_force>
+        <position>0 0 0.4</position><direction>0 0 -1</direction><max_force>10.0</max_force>
       </plugin>
 
       <!-- 3 reaction wheels (torque command, max 10 mN·m) -->
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_x_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>1 0 0</body_axis>
         <topic>/deputy_formation/rw/x/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_y_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>0 1 0</body_axis>
         <topic>/deputy_formation/rw/y/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_z_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>0 0 1</body_axis>
         <topic>/deputy_formation/rw/z/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
 
       <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">
@@ -329,9 +335,9 @@
 
       <link name="base_link">
         <inertial>
-          <mass>2.0</mass>
+          <mass>100.0</mass>
           <inertia>
-            <ixx>0.008</ixx><iyy>0.008</iyy><izz>0.003</izz>
+            <ixx>14.0</ixx><iyy>14.0</iyy><izz>10.0</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
           </inertia>
         </inertial>
@@ -357,9 +363,9 @@
       </link>
 
       <link name="wheel_x">
-        <pose>0.25 0 0 0 1.5708 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+        <pose>0 0 0 0 1.5708 0</pose>
+        <inertial><mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
           <material><ambient>0.8 0.1 0.1 1</ambient><diffuse>0.8 0.1 0.1 1</diffuse></material></visual>
@@ -372,9 +378,9 @@
       </joint>
 
       <link name="wheel_y">
-        <pose>0 0.25 0 1.5708 0 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+        <pose>0 0 0 1.5708 0 0</pose>
+        <inertial><mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
           <material><ambient>0.1 0.8 0.1 1</ambient><diffuse>0.1 0.8 0.1 1</diffuse></material></visual>
@@ -387,9 +393,9 @@
       </joint>
 
       <link name="wheel_z">
-        <pose>0 0 0.25 0 0 0</pose>
-        <inertial><mass>0.2</mass>
-          <inertia><ixx>1e-4</ixx><iyy>1e-4</iyy><izz>2e-4</izz>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial><mass>2.0</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.02</izz>
             <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.02</length></cylinder></geometry>
           <material><ambient>0.1 0.1 0.8 1</ambient><diffuse>0.1 0.1 0.8 1</diffuse></material></visual>
@@ -411,48 +417,54 @@
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fx_plus/cmd</topic>
-        <position>-0.5 0 0</position><direction>1 0 0</direction><max_force>1.0</max_force>
+        <position>-0.4 0 0</position><direction>1 0 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fx_minus/cmd</topic>
-        <position>0.5 0 0</position><direction>-1 0 0</direction><max_force>1.0</max_force>
+        <position>0.4 0 0</position><direction>-1 0 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fy_plus/cmd</topic>
-        <position>0 -0.5 0</position><direction>0 1 0</direction><max_force>1.0</max_force>
+        <position>0 -0.4 0</position><direction>0 1 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fy_minus/cmd</topic>
-        <position>0 0.5 0</position><direction>0 -1 0</direction><max_force>1.0</max_force>
+        <position>0 0.4 0</position><direction>0 -1 0</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fz_plus/cmd</topic>
-        <position>0 0 -0.5</position><direction>0 0 1</direction><max_force>1.0</max_force>
+        <position>0 0 -0.4</position><direction>0 0 1</direction><max_force>10.0</max_force>
       </plugin>
       <plugin filename="gz_thruster_ros2-system" name="gz_cw_dynamics::Thruster">
         <link_name>base_link</link_name>
         <topic>/deputy_docking/thruster/fz_minus/cmd</topic>
-        <position>0 0 0.5</position><direction>0 0 -1</direction><max_force>1.0</max_force>
+        <position>0 0 0.4</position><direction>0 0 -1</direction><max_force>10.0</max_force>
       </plugin>
 
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_x_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>1 0 0</body_axis>
         <topic>/deputy_docking/rw/x/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_y_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>0 1 0</body_axis>
         <topic>/deputy_docking/rw/y/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
       <plugin filename="gz_reaction_wheel_ros2-system" name="gz_cw_dynamics::ReactionWheel">
         <joint_name>wheel_z_joint</joint_name>
+        <link_name>base_link</link_name>
+        <body_axis>0 0 1</body_axis>
         <topic>/deputy_docking/rw/z/cmd</topic>
-        <max_torque>0.01</max_torque>
+        <max_torque>0.1</max_torque>
       </plugin>
 
       <plugin filename="gz_orbit_imu-system" name="gz_cw_dynamics::OrbitImu">

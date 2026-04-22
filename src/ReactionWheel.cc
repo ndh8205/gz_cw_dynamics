@@ -65,7 +65,7 @@ public:
     this->maxTorque =
         sdf->Get<double>("max_torque", 0.01).first;
     this->axis =
-        sdf->Get<gz::math::Vector3d>("axis",
+        sdf->Get<gz::math::Vector3d>("body_axis",
                                      gz::math::Vector3d(0, 0, 1)).first;
     if (this->axis.Length() > 1e-9)
       this->axis.Normalize();
